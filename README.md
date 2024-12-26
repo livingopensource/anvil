@@ -1,6 +1,6 @@
-# Project cloud
+# Anvil cloud
 
-One Paragraph of project description goes here
+OAnvil Cloud is a kubernetes based API for managing kubevirt based VM's via a RESTful API
 
 ## Getting Started
 
