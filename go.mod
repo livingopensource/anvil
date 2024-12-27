@@ -5,6 +5,7 @@ go 1.22.4
 require (
 	github.com/google/uuid v1.4.0
 	github.com/gorilla/mux v1.8.1
+	github.com/gorilla/websocket v1.5.0
 	github.com/spf13/viper v1.19.0
 	k8s.io/api v0.30.0
 	k8s.io/apimachinery v0.30.0
@@ -29,7 +30,6 @@ require (
 	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/google/gnostic-models v0.6.8 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
-	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/imdario/mergo v0.3.16 // indirect
 	github.com/josharian/intern v1.0.0 // indirect

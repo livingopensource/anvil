@@ -10,6 +10,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	kvV1 "kubevirt.io/client-go/generated/kubevirt/clientset/versioned/typed/core/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/watch"
 )
@@ -23,10 +24,10 @@ type VirtualMachine struct {
 
 func NewCluster(req clusters.Resource) *VirtualMachine {
 	return &VirtualMachine{
-		ctx: req.Ctx,
+		ctx:        req.Ctx,
 		kubeconfig: req.Kubeconfig,
-		project: req.Project,
-		request: req.Request,
+		project:    req.Project,
+		request:    req.Request,
 	}
 }
 
@@ -130,7 +131,7 @@ chpasswd:
 						"spec": map[string]interface{}{
 							"storage": map[string]interface{}{
 								"accessModes": []string{
-									"ReadWriteMany",
+									"ReadWriteOnce",
 								},
 								"resources": map[string]interface{}{
 									"requests": map[string]interface{}{
@@ -218,4 +219,14 @@ func (vm *VirtualMachine) Patch() (map[string]interface{}, error) {
 
 func (vm *VirtualMachine) Watch() (watch.Interface, error) {
 	return nil, errors.New("not implemented yet")
+}
+
+func (vm *VirtualMachine) VNC() (kvV1.StreamInterface, error) {
+	vars := mux.Vars(vm.request)
+	name := vars["name"]
+	kubevirt, err := clusters.KubevirtResourceSchema(vm.kubeconfig)
+	if err != nil {
+		return nil, err
+	}
+	return kubevirt.VirtualMachineInstance(vm.project).VNC(name)
 }

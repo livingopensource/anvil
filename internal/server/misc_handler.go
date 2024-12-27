@@ -1,9 +1,15 @@
 package server
 
 import (
+	"crypto/sha256"
+	"encoding/base32"
 	"encoding/json"
+	"fmt"
 	"log/slog"
 	"net/http"
+	"strings"
+
+	"github.com/gorilla/mux"
 )
 
 // responseBody is the response body that is returned to the client.
@@ -51,4 +57,21 @@ func (s *Server) HelloWorldHandler(w http.ResponseWriter, r *http.Request) {
 func (s *Server) healthHandler(w http.ResponseWriter, r *http.Request) {
 	jsonResp := []byte(`{"alive": true}`)
 	_, _ = w.Write(jsonResp)
+}
+
+func (s *Server) hashGen(w http.ResponseWriter, r *http.Request) {
+	crw := customResponseWriter{w: w}
+	vars := mux.Vars(r)
+	email := vars["email"]
+	normalizedEmail := strings.ToLower(strings.TrimSpace(email))
+    hasher := sha256.New()
+    hasher.Write([]byte(normalizedEmail))
+    hash := hasher.Sum(nil)
+    // Base32 encoding is case-insensitive and safe for DNS names.
+    encoded := base32.StdEncoding.EncodeToString(hash)
+    // Shorten the encoded string and convert to lowercase.
+    shortened := strings.ToLower(encoded[:20])
+    // Add a consistent prefix or suffix for clarity (important!)
+    namespaceName := fmt.Sprintf("swift-%s", shortened)
+	crw.response(http.StatusOK, "success", namespaceName, nil)
 }
