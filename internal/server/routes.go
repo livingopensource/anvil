@@ -18,10 +18,11 @@ func (s *Server) RegisterRoutes() http.Handler {
 	instances := api.PathPrefix("/virtual-machines").Subrouter()
 	instances.HandleFunc("", s.ListVMInstancesHandler).Methods(http.MethodGet)
 	instances.HandleFunc("", s.CreateVMInstanceHandler).Methods(http.MethodPost)
+	instances.HandleFunc("/watch", s.WatchVMInstanceHandler).Methods(http.MethodGet)	
 	instances.HandleFunc("/{name}", s.GetVMInstanceHandler).Methods(http.MethodGet)
 	instances.HandleFunc("/{name}", s.DeleteVMInstanceHandler).Methods(http.MethodDelete)
 	instances.HandleFunc("/{name}", s.UpdateVMInstanceHandler).Methods(http.MethodPut)
-	instances.HandleFunc("/{name}/vnc", s.VNCInstanceHandler).Methods(http.MethodGet)
+	instances.HandleFunc("/{name}/vnc", s.VNCVMInstanceHandler).Methods(http.MethodGet)
 
 	return r
 }

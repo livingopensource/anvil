@@ -2,6 +2,7 @@ package server
 
 import (
 	"cloud/internal/vm"
+	"encoding/json"
 	"log/slog"
 	"net/http"
 
@@ -139,7 +140,7 @@ func (s *Server) CreateVMInstanceHandler(w http.ResponseWriter, r *http.Request)
 	crw.response(http.StatusOK, "success", nil, nil)
 }
 
-func (s *Server) VNCInstanceHandler(w http.ResponseWriter, r *http.Request) {
+func (s *Server) VNCVMInstanceHandler(w http.ResponseWriter, r *http.Request) {
 	crw := customResponseWriter{w: w}
 	project := r.URL.Query().Get("project")
 	if project == "" {
@@ -202,6 +203,58 @@ func (s *Server) VNCInstanceHandler(w http.ResponseWriter, r *http.Request) {
 		err = conn.WriteMessage(websocket.BinaryMessage, buf[:n])
 		if err != nil {
 			slog.Error("Error writing to websocket: " + err.Error())
+			break
+		}
+	}
+}
+
+func (s *Server) WatchVMInstanceHandler(w http.ResponseWriter, r *http.Request) {
+	crw := customResponseWriter{w: w}
+	project := r.URL.Query().Get("project")
+	if project == "" {
+		crw.response(http.StatusBadRequest, "project is required", nil, nil)
+		return
+	}
+	req := newRequest("vm", r)
+	resource := req.useProject(project)
+	virtualMachine := vm.NewCluster(resource)
+	// Upgrade HTTP connection to WebSocket
+	upgrader := websocket.Upgrader{
+		CheckOrigin: func(r *http.Request) bool {
+			return true
+		},
+	}
+	conn, err := upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		slog.Error(err.Error())
+		crw.response(http.StatusInternalServerError, err.Error(), nil, nil)
+		return
+	}
+
+	watcher, err := virtualMachine.Watch()
+	if err != nil {
+		statusError, isStatus := err.(*errors.StatusError)
+		if isStatus {
+			errCode := statusError.Status().Code
+			slog.Error("Kubernetes error", "code", errCode, "message", err.Error())
+			crw.response(int(errCode), err.Error(), nil, nil)
+		} else {
+			slog.Error("Unknown error", "message", err.Error())
+			crw.response(http.StatusUnprocessableEntity, err.Error(), nil, nil)
+		}
+		return
+	}
+	defer watcher.Stop()
+
+	// Stream events to the websocket
+	for event := range watcher.ResultChan() {
+		jsonData, err := json.Marshal(event)
+		if err != nil {
+			slog.Error(err.Error())
+			continue
+		}
+		if err := conn.WriteMessage(websocket.TextMessage, jsonData); err != nil {
+			slog.Error(err.Error())
 			break
 		}
 	}
