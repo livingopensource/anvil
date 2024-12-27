@@ -32,6 +32,9 @@ func NewCluster(req clusters.Resource) *VirtualMachine {
 }
 
 func (vm *VirtualMachine) Create() error {
+	// TODO: Prevent users from creating an insance with name watch, 
+	// as creating such an instance will prevent thr router from listing 
+	// the instance, instead serving the endpoint for watching websockets
 	payload, err := clusters.Payload(vm.request)
 	if err != nil {
 		return err
