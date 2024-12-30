@@ -10,9 +10,9 @@ import (
 
 	"github.com/gorilla/mux"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	kvV1 "kubevirt.io/client-go/generated/kubevirt/clientset/versioned/typed/core/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/watch"
+	kvV1 "kubevirt.io/client-go/generated/kubevirt/clientset/versioned/typed/core/v1"
 )
 
 type VirtualMachine struct {
@@ -32,8 +32,8 @@ func NewCluster(req clusters.Resource) *VirtualMachine {
 }
 
 func (vm *VirtualMachine) Create() error {
-	// TODO: Prevent users from creating an insance with name watch, 
-	// as creating such an instance will prevent thr router from listing 
+	// TODO: Prevent users from creating an insance with name watch,
+	// as creating such an instance will prevent thr router from listing
 	// the instance, instead serving the endpoint for watching websockets
 	payload, err := clusters.Payload(vm.request)
 	if err != nil {
@@ -134,13 +134,14 @@ chpasswd:
 						"spec": map[string]interface{}{
 							"storage": map[string]interface{}{
 								"accessModes": []string{
-									"ReadWriteOnce",
+									"ReadWriteMany",
 								},
 								"resources": map[string]interface{}{
 									"requests": map[string]interface{}{
 										"storage": payload.Compute.Storage,
 									},
 								},
+								"volumeMode": "Filesystem",
 							},
 							"source": map[string]interface{}{
 								"http": map[string]interface{}{
